@@ -139,7 +139,7 @@ If you prefer explicit wiring in the app:
 
 ```ts
 // instrumentation.ts
-import { initServerDevTools } from "@server-devtools/instrumentation";
+import { initServerDevTools } from "server-devtools/instrumentation";
 
 export async function register() {
   if (process.env.NODE_ENV !== "production") {
@@ -180,7 +180,7 @@ npm run web:start:debug
 
 ### Why this works
 
-`server-devtools dev -- <your command>` injects instrumentation through `NODE_OPTIONS=--require @server-devtools/instrumentation/register` before your wrapper script executes. So your wrapper can:
+`server-devtools dev -- <your command>` injects instrumentation through `NODE_OPTIONS=--require <repo>/packages/instrumentation/dist/register.cjs` before your wrapper script executes. So your wrapper can:
 
 - Set env vars
 - Run business logic
