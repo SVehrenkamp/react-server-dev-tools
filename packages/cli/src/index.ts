@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 type Managed = {
   name: string;
@@ -13,10 +15,12 @@ function spawnManaged(
   command: string,
   args: string[],
   env: NodeJS.ProcessEnv = process.env,
+  cwd = process.cwd(),
 ): Managed {
   const proc = spawn(command, args, {
     stdio: "inherit",
     env,
+    cwd,
     shell: process.platform === "win32",
   });
 
@@ -24,6 +28,9 @@ function spawnManaged(
 }
 
 const [command, ...args] = process.argv.slice(2);
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const projectRoot = path.resolve(currentDir, "../../..");
 
 if (!command || command === "help" || command === "--help") {
   console.log("server-devtools dev [-- <your-dev-command>]");
@@ -66,7 +73,7 @@ const shutdown = (exitCode = 0) => {
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
-const ui = spawnManaged("ui", "pnpm", ["--filter", "@server-devtools/ui", "dev"]);
+const ui = spawnManaged("ui", "pnpm", ["dev:ui"], process.env, projectRoot);
 managed.push(ui);
 
 ui.proc.on("exit", (code: number | null) => {
@@ -88,7 +95,8 @@ if (forwarded.length > 0) {
     process.exit(1);
   }
 
-  const nodeOptions = `${process.env.NODE_OPTIONS ?? ""} --require @server-devtools/instrumentation/register`.trim();
+  const registerPath = path.resolve(projectRoot, "packages/instrumentation/dist/register.cjs");
+  const nodeOptions = `${process.env.NODE_OPTIONS ?? ""} --require ${registerPath}`.trim();
 
   const instrumentedEnv: NodeJS.ProcessEnv = {
     ...process.env,
