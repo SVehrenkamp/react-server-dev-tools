@@ -43,6 +43,8 @@ export interface NetworkRequest {
 export type WSMessage =
   | { type: "log"; data: LogEntry }
   | { type: "network"; data: NetworkRequest }
+  | { type: "relay-log"; data: LogEntry }
+  | { type: "relay-network"; data: NetworkRequest }
   | { type: "batch"; data: { logs: LogEntry[]; requests: NetworkRequest[] } }
   | { type: "clear"; target: "logs" | "network" | "all" }
   | {

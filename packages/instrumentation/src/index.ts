@@ -17,10 +17,31 @@ const defaults: Required<DevToolsOptions> = {
 };
 
 let active: RunningDevTools | null = null;
+const ACTIVE_KEY = Symbol.for("server-devtools.active-instance");
+
+type DevToolsGlobal = typeof globalThis & {
+  [ACTIVE_KEY]?: RunningDevTools | null;
+};
+
+function getActiveInstance(): RunningDevTools | null {
+  const globalActive = (globalThis as DevToolsGlobal)[ACTIVE_KEY];
+  if (globalActive) {
+    active = globalActive;
+    return globalActive;
+  }
+
+  return active;
+}
+
+function setActiveInstance(instance: RunningDevTools | null): void {
+  active = instance;
+  (globalThis as DevToolsGlobal)[ACTIVE_KEY] = instance;
+}
 
 export function initServerDevTools(options: DevToolsOptions = {}): RunningDevTools {
-  if (active) {
-    return active;
+  const current = getActiveInstance();
+  if (current) {
+    return current;
   }
 
   if (process.env.NODE_ENV === "production") {
@@ -73,6 +94,9 @@ export function initServerDevTools(options: DevToolsOptions = {}): RunningDevToo
   });
 
   wsServer.on("error", (error) => {
+    if ((error as NodeJS.ErrnoException).code === "EADDRINUSE") {
+      return;
+    }
     console.warn("[server-devtools] websocket server error", error);
   });
 
@@ -81,11 +105,12 @@ export function initServerDevTools(options: DevToolsOptions = {}): RunningDevToo
     restoreFetch();
     restoreHttp();
     wsServer.close();
-    active = null;
+    setActiveInstance(null);
   };
 
-  active = { shutdown };
-  return active;
+  const instance = { shutdown };
+  setActiveInstance(instance);
+  return instance;
 }
 
 export type {

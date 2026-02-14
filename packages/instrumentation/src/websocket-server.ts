@@ -1,4 +1,4 @@
-import { WebSocketServer } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
 
 import type { DataCollector } from "./data-collector";
 import type { LogEntry, NetworkRequest } from "./types";
@@ -26,6 +26,18 @@ function sendSafe(ws: { readyState: number; send: (value: string) => void }, mes
   }
 }
 
+function sendRelaySafe(ws: WebSocket | null, message: WSMessage): void {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    return;
+  }
+
+  try {
+    ws.send(JSON.stringify(message));
+  } catch {
+    // drop failed send, don't crash app runtime
+  }
+}
+
 export function startWebSocketServer(
   collector: DataCollector,
   options: WebSocketServerOptions,
@@ -35,16 +47,56 @@ export function startWebSocketServer(
     port: options.port,
   });
 
+  let relaySocket: WebSocket | null = null;
+  let relayReconnectTimer: NodeJS.Timeout | null = null;
+  let relayReconnectMs = 1000;
+  const relayUrl = `ws://${options.host}:${options.port}`;
+
+  const clearRelayReconnectTimer = () => {
+    if (relayReconnectTimer) {
+      clearTimeout(relayReconnectTimer);
+      relayReconnectTimer = null;
+    }
+  };
+
+  const connectRelay = () => {
+    clearRelayReconnectTimer();
+
+    const ws = new WebSocket(relayUrl);
+    relaySocket = ws;
+
+    ws.on("open", () => {
+      relayReconnectMs = 1000;
+    });
+
+    ws.on("close", () => {
+      if (relaySocket === ws) {
+        relaySocket = null;
+      }
+
+      relayReconnectTimer = setTimeout(() => {
+        connectRelay();
+      }, relayReconnectMs);
+      relayReconnectMs = Math.min(relayReconnectMs * 2, 30_000);
+    });
+
+    ws.on("error", () => {
+      ws.close();
+    });
+  };
+
   const onLog = (entry: LogEntry) => {
     for (const client of wss.clients) {
       sendSafe(client, { type: "log", data: entry });
     }
+    sendRelaySafe(relaySocket, { type: "relay-log", data: entry });
   };
 
   const onNetwork = (entry: NetworkRequest) => {
     for (const client of wss.clients) {
       sendSafe(client, { type: "network", data: entry });
     }
+    sendRelaySafe(relaySocket, { type: "relay-network", data: entry });
   };
 
   const onClear = (target: "logs" | "network" | "all") => {
@@ -78,6 +130,16 @@ export function startWebSocketServer(
     ws.on("message", (raw) => {
       try {
         const parsed = JSON.parse(raw.toString()) as WSMessage;
+        if (parsed.type === "relay-log") {
+          collector.addLog(parsed.data);
+          return;
+        }
+
+        if (parsed.type === "relay-network") {
+          collector.addNetwork(parsed.data);
+          return;
+        }
+
         if (parsed.type === "clear") {
           collector.clear(parsed.target);
         }
@@ -111,10 +173,19 @@ export function startWebSocketServer(
   });
 
   wss.on("close", () => {
+    clearRelayReconnectTimer();
+    relaySocket?.close();
+    relaySocket = null;
     collector.off("log", onLog);
     collector.off("network", onNetwork);
     collector.off("clear", onClear);
     collector.off("status", onStatus);
+  });
+
+  wss.on("error", (error) => {
+    if ((error as NodeJS.ErrnoException).code === "EADDRINUSE") {
+      connectRelay();
+    }
   });
 
   return wss;
