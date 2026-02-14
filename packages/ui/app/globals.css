@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-gradient: radial-gradient(circle at 20% 0%, #1f242d 0%, #101216 45%, #0b0d10 100%);
+  --text-color: #e6e9ee;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-gradient: radial-gradient(circle at 20% 0%, #edf3ff 0%, #dbe4f2 45%, #cfd8e8 100%);
+  --text-color: #1d2430;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg-gradient);
+  color: var(--text-color);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
