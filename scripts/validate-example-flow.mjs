@@ -6,18 +6,7 @@ const requiredMessageFragments = ["[example] demo started", "[example] upstream 
 async function main() {
   const child = spawn(
     process.execPath,
-    [
-      "packages/cli/dist/index.js",
-      "dev",
-      "--",
-      "next",
-      "dev",
-      "examples/basic-app",
-      "--hostname",
-      "127.0.0.1",
-      "--port",
-      "3000",
-    ],
+    ["packages/cli/dist/index.js", "dev", "--", "pnpm", "dev:example"],
     {
       cwd: process.cwd(),
       stdio: "inherit",
