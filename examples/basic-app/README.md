@@ -9,6 +9,8 @@ pnpm install
 pnpm dev:debug
 ```
 
+Run from the repository root. This repo now uses a single top-level package.
+
 - App: `http://127.0.0.1:3000`
 - DevTools UI: `http://127.0.0.1:3002`
 

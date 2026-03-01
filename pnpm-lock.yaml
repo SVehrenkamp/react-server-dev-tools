@@ -6,7 +6,57 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      '@tanstack/react-virtual':
+        specifier: ^3.11.2
+        version: 3.13.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      next:
+        specifier: ^14.2.35
+        version: 14.2.35(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      ws:
+        specifier: ^8.18.0
+        version: 8.19.0
+      zustand:
+        specifier: ^5.0.3
+        version: 5.0.11(@types/react@18.3.28)(react@18.3.1)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.4
+        version: 22.19.11
+      '@types/react':
+        specifier: ^18.3.18
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: ^18.3.5
+        version: 18.3.7(@types/react@18.3.28)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.4.24(postcss@8.5.6)
+      postcss:
+        specifier: ^8.5.1
+        version: 8.5.6
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.6)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.19.11)(jiti@1.21.7)
 
   examples/basic-app:
     dependencies:

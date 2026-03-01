@@ -1,15 +1,58 @@
 {
-  "name": "server-devtools-monorepo",
+  "name": "server-devtools",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "packageManager": "pnpm@9.15.0",
+  "bin": {
+    "server-devtools": "packages/cli/dist/index.js"
+  },
+  "exports": {
+    "./instrumentation": {
+      "types": "./packages/instrumentation/dist/index.d.ts",
+      "import": "./packages/instrumentation/dist/index.js",
+      "require": "./packages/instrumentation/dist/index.cjs"
+    },
+    "./instrumentation/register": {
+      "types": "./packages/instrumentation/dist/register.d.ts",
+      "import": "./packages/instrumentation/dist/register.js",
+      "require": "./packages/instrumentation/dist/register.cjs"
+    }
+  },
   "scripts": {
-    "build": "pnpm -r build",
-    "dev": "pnpm --filter @server-devtools/ui dev",
-    "lint": "pnpm -r lint",
-    "smoke": "pnpm --filter @server-devtools/instrumentation build && node scripts/smoke-log-flow.mjs",
-    "test:custom-wrapper": "pnpm --filter @server-devtools/instrumentation build && node scripts/test-custom-wrapper.mjs",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "build": "pnpm build:instrumentation && pnpm build:cli && pnpm build:ui",
+    "build:instrumentation": "tsup packages/instrumentation/src/index.ts packages/instrumentation/src/register.ts --format esm,cjs --dts --out-dir packages/instrumentation/dist",
+    "build:cli": "tsup packages/cli/src/index.ts --format esm --out-dir packages/cli/dist",
+    "build:ui": "next build packages/ui",
+    "dev": "pnpm dev:ui",
+    "dev:ui": "next dev packages/ui --hostname 127.0.0.1 --port 3002",
+    "dev:example": "next dev examples/basic-app --hostname 127.0.0.1 --port 3000",
+    "dev:debug": "pnpm build:instrumentation && pnpm build:cli && node packages/cli/dist/index.js dev -- next dev examples/basic-app --hostname 127.0.0.1 --port 3000",
+    "validate:example": "pnpm build:instrumentation && pnpm build:cli && node scripts/validate-example-flow.mjs",
+    "smoke": "pnpm build:instrumentation && node scripts/smoke-log-flow.mjs",
+    "test:custom-wrapper": "pnpm build:instrumentation && node scripts/test-custom-wrapper.mjs",
+    "test": "vitest run",
+    "lint": "pnpm typecheck",
+    "typecheck": "tsc --noEmit -p packages/instrumentation/tsconfig.json && tsc --noEmit -p packages/cli/tsconfig.json && tsc --noEmit -p packages/ui/tsconfig.json && tsc --noEmit -p examples/basic-app/tsconfig.json"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.11.2",
+    "clsx": "^2.1.1",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ws": "^8.18.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4"
   }
 }
